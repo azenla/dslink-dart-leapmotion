@@ -1,0 +1,4 @@
+name: dslink_dart_leapmotion
+description: A sample command-line application
+dependencies:
+  leap_motion: any
