@@ -1,4 +1,8 @@
 name: dslink_dart_leapmotion
-description: A sample command-line application
+description: A DSLink publishing LeapMotion telemetry to DSA
 dependencies:
-  leap_motion: any
+  crypto: any
+  dslink:
+    git: https://github.com/IOT-DSA/sdk-dslink-dart.git
+  leap_motion:
+    git: https://github.com/kaendfinger/LeapMotionDart.git
