@@ -23,16 +23,13 @@ class Sample {
     Frame frame = event.frame;
 
     //print("Frame id:" + frame.id.toString() + ", timestamp:" + frame.timestamp.toString() + ", hands:" + frame.hands.length.toString() + ", fingers:" + frame.fingers.length.toString() + ", tools:" + frame.tools.length.toString() + ", gestures:" + frame.gestures().length.toString());
-    
-    DSNode handCount = rootNode.children["hands"].children["count"];
-    if (handCount.value.toNumber() != frame.hands.length) {
-      handCount.value = Value.of(frame.hands.length);
-    }
-    
-    if (frame.hands.length > 0) {
-      // Get the first hand
-      Hand hand = frame.hands[0];
 
+    link["/hands/count"].value = Value.of(frame.hands.length);
+
+    for (int i = 0; i < frame.hands.length; i++){
+      // Get the first hand
+      Hand hand = frame.hands[i];
+      String handPath = "/hands/hand"+(i+1).toString();
       // Check if the hand has any fingers
       FingerList fingers = hand.fingerList;
       if (fingers.length > 0) {
@@ -45,6 +42,9 @@ class Sample {
       }
 
       // Get the hand's sphere radius and palm position
+      
+      link[handPath+"/sphereRadius"].value = Value.of(hand.sphereRadius);
+
       //print("Hand sphere radius:" + hand.sphereRadius.toString() + " mm, palm position:" + hand.palmPosition.toString());
 
       // Get the hand's normal vector and direction
@@ -80,22 +80,19 @@ class Sample {
               sweptAngle = (circle.progress - (previousGesture as CircleGesture).progress) * 2 * Math.PI;
             }
           }
+          
+          link["/gestures/circle/state"].value = Value.of(getState(circle.state));
+          link["/gestures/circle/direction"].value = Value.of(clockwiseness);
+          link["/gestures/circle/sweptAngle"].value = Value.of(LeapUtil.toDegrees(sweptAngle));
+          link["/gestures/circle/progress"].value = Value.of(circle.progress);
+          link["/gestures/circle/radius"].value = Value.of(circle.radius);
           //print("Circle id:" + circle.id.toString() + ", " + circle.state.toString() + ", progress:" + circle.progress.toString() + ", radius:" + circle.radius.toString() + ", angle:" + LeapUtil.toDegrees(sweptAngle).toString() + ", " + clockwiseness);
           break;
         case Gesture.TYPE_SWIPE:
           SwipeGesture swipe = gesture as SwipeGesture;
           
-          DSNode swipeNode = rootNode.children["gestures"].children["swipe"];
-          
-          var state = getState(swipe.state);
-          if (swipeNode.children["state"].value.toString() != state) {
-            swipeNode.children["state"].value = Value.of(state);
-          }
-          
-          var direction = getDirection(swipe.direction);
-          if (swipeNode.children["direction"].value.toString() != direction) {
-            swipeNode.children["direction"].value = Value.of(direction);
-          }
+          link["/gestures/swipe/state"].value = Value.of(getState(swipe.state));
+          link["/gestures/swipe/direction"].value = Value.of(getDirection(swipe.direction));
           
           //print("Swipe id:" + swipe.id.toString() + ", " + swipe.state.toString() + ", position:" + swipe.position.toString() + ", direction:" + swipe.direction.toString() + ", speed:" + swipe.speed.toString());
           break;
@@ -111,54 +108,44 @@ class Sample {
     }
   }
 }
-String getState (int num)
-{
-  var states = ["start","update","stop"];
-  
-  return states[num-1];
+String getState(int num) {
+  var states = ["start", "update", "stop"];
+  //print(states[num - 1]);
+  return states[num - 1];
 }
 
-String getDirection (Vector3 vector)
-{
+String getDirection(Vector3 vector) {
   var direction = "none";
   var isHorizontal = vector.x.abs() > vector.y.abs();
   //Classify as right-left or up-down
-  if(isHorizontal){
-      if(vector.x > 0){
-        direction = "right";
-      } else {
-        direction = "left";
-      }
+  if (isHorizontal) {
+    if (vector.x > 0) {
+      direction = "right";
+    } else {
+      direction = "left";
+    }
   } else { //vertical
-      if(vector.y > 0){
-        direction = "up";
-      } else {
-        direction = "down";
-      }                  
+    if (vector.y > 0) {
+      direction = "up";
+    } else {
+      direction = "down";
+    }
   }
-  
+
   return direction;
 }
 
-DSNode rootNode;
-var hands;
-var gestures;
 
+DSLink link;
 main() {
-  var link = new DSLink("leapmotion", host: "rnd.iot-dsa.org");
-  rootNode = link.createRootNode("Leap Motion");
-  
-  hands = rootNode.createChild("hands");
-  hands.createChild("count", value: 0);
-  
-  gestures = rootNode.createChild("gestures");
-  var swipe = gestures.createChild("swipe");
-  swipe.createChild("state", value: "none");
-  swipe.createChild("direction", value: "none");
-  
-  
+  link = new DSLink("leapmotion2", host: "rnd.iot-dsa.org", sendInterval: 1000);
+
+
+  //link.loadNodes();
+
+
   //print(rootNode.children);
-  
+
   link.connect().then((_) {
     print("Connected.");
     Sample sample = new Sample();
